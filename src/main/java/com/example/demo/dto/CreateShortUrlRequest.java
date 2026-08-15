@@ -1,12 +1,14 @@
 package com.example.demo.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class CreateShortUrlRequest {
 
     @NotBlank(message = "originalUrl is required")
     @Size(max = 2048)
+    @Pattern(regexp = "^(https?)://.+$", message = "originalUrl must start with http:// or https://")
     private String originalUrl;
 
     public CreateShortUrlRequest() {}

@@ -4,6 +4,7 @@ import com.example.demo.dto.AnalyticsResponse;
 import com.example.demo.dto.CreateShortUrlRequest;
 import com.example.demo.dto.CreateShortUrlResponse;
 import com.example.demo.entity.ShortUrl;
+import com.example.demo.exception.InvalidUrlException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.ShortUrlRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import com.example.demo.util.ShortCodeService;
+
 public class UrlServiceImplTest {
 
     private ShortUrlRepository repository;
@@ -24,7 +27,9 @@ public class UrlServiceImplTest {
     @BeforeEach
     void setUp() {
         repository = mock(ShortUrlRepository.class);
-        service = new UrlServiceImpl(repository);
+        ShortCodeService shortCodeService = mock(ShortCodeService.class);
+        when(shortCodeService.randomCode(7)).thenReturn("abc1234");
+        service = new UrlServiceImpl(repository, shortCodeService);
     }
 
     @Test
@@ -57,6 +62,14 @@ public class UrlServiceImplTest {
     void resolveAndTrack_notFound() {
         when(repository.findByCode(anyString())).thenReturn(Optional.empty());
         assertThrows(NotFoundException.class, () -> service.resolveAndTrack("nope"));
+    }
+
+    @Test
+    void createShortUrl_rejectsUnsafeUrl() {
+        CreateShortUrlRequest req = new CreateShortUrlRequest("javascript:alert(1)");
+
+        assertThrows(InvalidUrlException.class, () -> service.createShortUrl(req, "http://localhost:8080"));
+        verify(repository, never()).save(any(ShortUrl.class));
     }
 
     @Test

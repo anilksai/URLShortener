@@ -6,17 +6,20 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 @RestController
 @RequestMapping("/api/orchestrator")
 public class OrchestrationController {
 
-    private final Orchestrator orchestrator;
+    private final OrchestratorEngine engine;
     private final Map<String, Boolean> approvals = new ConcurrentHashMap<>();
 
-    public OrchestrationController() {
-        this.orchestrator = new Orchestrator();
+    @Autowired
+    public OrchestrationController(OrchestratorEngine engine) {
+        this.engine = engine;
 
-        // sample nodes for demo
+        // sample nodes for demo (enqueue to engine)
         Orchestrator.Node n1 = new Orchestrator.Node("generate-artifact", () -> {
             // simulate work
             System.out.println("Generating artifact");
@@ -28,16 +31,15 @@ public class OrchestrationController {
         Orchestrator.Node n3 = new Orchestrator.Node("deploy", () -> { System.out.println("Deploying"); });
         n3.dependsOn.add("run-tests");
 
-        orchestrator.addNode(n1); orchestrator.addNode(n2); orchestrator.addNode(n3);
+        // Enqueue in logical order; engine uses queue + retries so order is preserved for simple DAGs
+        engine.enqueue(n1);
+        engine.enqueue(n2);
+        engine.enqueue(n3);
     }
 
-    @PostMapping("/start")
-    public ResponseEntity<Object> start() {
-        orchestrator.run(nodeId -> {
-            // approval provider delegating to manual approvals map
-            return approvals.getOrDefault(nodeId, false);
-        });
-        return ResponseEntity.ok(Map.of("status", "started"));
+    @PostMapping("/metrics")
+    public ResponseEntity<Object> metrics() {
+        return ResponseEntity.ok(engine.metrics());
     }
 
     @PostMapping("/approve/{nodeId}")

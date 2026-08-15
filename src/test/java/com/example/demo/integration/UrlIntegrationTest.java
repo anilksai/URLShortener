@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 
 import java.net.URI;
@@ -35,7 +35,7 @@ public class UrlIntegrationTest {
 
         // parse code from body crudely
         String body = r.getBody();
-        String code = body.replaceAll("(?s).*\"code\"\s*:\s*\"([^"]+)\".*", "$1");
+        String code = body.replaceAll("(?s).*\"code\"\\s*:\\s*\"([^\"]+)\".*", "$1");
         Assertions.assertNotNull(code);
 
         // simulate browser following redirect
